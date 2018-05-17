@@ -7,7 +7,10 @@ import "github.com/buger/jsonparser"
 import "time"
 import "strings"
 import "fmt"
-import "bytes"
+import (
+	"bytes"
+	"regexp"
+)
 
 type ServerInfo struct {
 	Hostname string
@@ -94,6 +97,8 @@ var docker_left_names = [...]string{
 	"tiny_",
 	"trusting_",
 }
+
+var allocIdRegex = regexp.MustCompile(`-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 
 func JSONToMessage(str string) Message {
 	//fmt.Printf("JSONToMessage: %+v\n", str)
@@ -198,7 +203,7 @@ func EnsureMessageService(m *Message) error {
 	if ok {
 		m.Topic = service
 		return nil
-	} 
+	}
 
 	kubernetes_container_name, ok := m.Container.Search("_io.kubernetes.container.name").Data().(string)
 
@@ -208,17 +213,22 @@ func EnsureMessageService(m *Message) error {
 	} else {
 		container_name, ok := m.Container.Path("container_name").Data().(string)
 		if ok {
-
-			match := false
-			for _, prefix := range docker_left_names {
-				if strings.HasPrefix(container_name, prefix) {
-					match = true
-					break
+			if allocIdRegex.MatchString(container_name) {
+				service = container_name[0:allocIdRegex.FindStringIndex(container_name)[0]]
+				m.Container.Set(service, "service")
+				m.Topic = service
+			} else {
+				match := false
+				for _, prefix := range docker_left_names {
+					if strings.HasPrefix(container_name, prefix) {
+						match = true
+						break
+					}
 				}
-			}
-			if !match {
-				m.Container.Set(container_name, "service")
-				m.Topic = container_name
+				if !match {
+					m.Container.Set(container_name, "service")
+					m.Topic = container_name
+				}
 			}
 		}
 	}

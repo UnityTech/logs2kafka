@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
 	"net"
+	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGraylogMessageConversion(t *testing.T) {
@@ -62,7 +63,6 @@ func TestGraylogCorruptedMessage(t *testing.T) {
 
 	err = ConvertGraylogFields(&m)
 	assert.Equal(t, err, nil)
-	
 
 	value, ok := m.Container.Path("foo").Data().(string)
 	assert.Equal(t, ok, true)
@@ -147,9 +147,9 @@ func TestGraylogMessageJSONin_short_message_field(t *testing.T) {
 	assert.Equal(t, ok, true)
 	assert.Equal(t, value, "world")
 
-	assert.Equal(t, 10, m.Container.S("arr").Index(0).Data().(float64))
-	assert.Equal(t, 20, m.Container.S("arr").Index(1).Data().(float64))
-	assert.Equal(t, 30, m.Container.S("arr").Index(2).Data().(float64))
+	assert.Equal(t, 10.0, m.Container.S("arr").Index(0).Data().(float64))
+	assert.Equal(t, 20.0, m.Container.S("arr").Index(1).Data().(float64))
+	assert.Equal(t, 30.0, m.Container.S("arr").Index(2).Data().(float64))
 
 }
 
@@ -263,7 +263,7 @@ func TestGraylogChunkProcessComplete(t *testing.T) {
 	s.HandleChunkedPacket([]byte("\x1e\x0f\x00\x00\x00\x00\xDE\xAD\xBE\xEF\x00\x02{\"version\":\"1.1\",\"host\":\"delivery-staging-us-east-1b-asg-general\",\"test\":\"foobar\",\"level\":7"))
 
 	assert.Equal(t, 1, len(s.ReceivedChunks))
-	
+
 	s.HandleChunkedPacket([]byte("\x1e\x0f\x00\x00\x00\x00\xDE\xAD\xBE\xEF\x01\x02,\"test2\":\"hello\"}"))
 
 	msg := <-s.Messages
@@ -294,7 +294,7 @@ func TestGraylogChunkProcessComplete2(t *testing.T) {
 	s.HandleChunkedPacket([]byte("\x1e\x0f\x00\x00\x00\x00\xDE\xAD\xBE\xEF\x00\x03{\"version\":\"1.1\",\"host\":\"delivery-staging-us-east-1b-asg-general\",\"test\":\"foobar\",\"level\":7"))
 
 	assert.Equal(t, 1, len(s.ReceivedChunks))
-	
+
 	s.HandleChunkedPacket([]byte("\x1e\x0f\x00\x00\x00\x00\xDE\xAD\xBE\xEF\x01\x03,\"test2\":\"hello\","))
 	s.HandleChunkedPacket([]byte("\x1e\x0f\x00\x00\x00\x00\xDE\xAD\xBE\xEF\x02\x03\"foo\":\"bar\"}"))
 
@@ -315,7 +315,6 @@ func TestGraylogChunkProcessComplete2(t *testing.T) {
 	value, ok = msg.Container.Path("foo").Data().(string)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, "bar", value)
-
 
 	assert.Equal(t, 0, len(s.ReceivedChunks))
 
@@ -359,7 +358,6 @@ func TestGraylogCleanupWorks(t *testing.T) {
 
 }
 
-
 func TestGraylogRunCleanupEvery5Seconds(t *testing.T) {
 
 	s := Graylog{}
@@ -377,7 +375,7 @@ func TestGraylogRunCleanupEvery5Seconds(t *testing.T) {
 	// A call to HandleChunkedPacket should trigger RunCleanup if previous
 	// was done over 5 seconds ago.
 	//
-	// But since LastCleanup is not changed sending another packet 
+	// But since LastCleanup is not changed sending another packet
 	// not trigger any cleanup
 	s.HandleChunkedPacket([]byte("\x1e\x0f\x00\x00\x00\x00\xDE\xAD\x00\x00\x00\x02{\"version\":\"1.1\",\"host\":\"delivery-staging-us-east-1b-asg-general\",\"test\":\"foobar\""))
 	assert.Equal(t, 2, len(s.ReceivedChunks))
@@ -412,7 +410,7 @@ func TestGraylogFullChunkReceive(t *testing.T) {
 
 	defer Conn.Close()
 	_, err = Conn.Write([]byte("\x1e\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02{\"version\":\"1.1\",\"host\":\"delivery-staging-us-east-1b-asg-general\",\"test\":\"foobar\""))
-	
+
 	_, err = Conn.Write([]byte("\x1e\x0f\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x02,\"short_message\":\"main.main()\",\"timestamp\":1.495173922171e+09,\"level\":3,\"_command\":\"/comet-source-adapter\",\"_container_id\":\"de57c44274f63c39455041c9515c0e12b856bef6533f8e4f8b3489852a0d7208\",\"_container_name\":\"k8s_ads-auction-comet-source-adapter_ads-auction-835331642-rzzgr_default_99baeb50-3bc3-11e7-a061-0a50dcb4a89e_1\",\"_created\":\"2017-05-19T06:05:22.037120689Z\",\"_image_id\":\"sha256:321a61fdf20848467b4eedc1f8d113308785eccefa21d2014b96d48021cbb309\",\"_image_name\":\"registry2.applifier.info:5005/comet-source-adapter@sha256:f205ed11f1a26bbfe3dd127adcf155949b9fb205b19821c8b78ceefc9389ebe6\",\"_io.kubernetes.container.name\":\"ads-auction-comet-source-adapter\",\"_io.kubernetes.pod.name\":\"ads-auction-835331642-rzzgr\",\"_tag\":\"test\"}"))
 	assert.Nil(t, err)
 	Conn.Close()
