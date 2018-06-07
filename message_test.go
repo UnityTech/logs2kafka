@@ -218,6 +218,7 @@ func TestEnsureMessageServiceOfNomadContainerWithTaskNumber(t *testing.T) {
 		assert.True(t, ok)
 
 		assert.Equal(t, test.expectedService, actualService)
+		assert.Equal(t, test.expectedService, m.Topic)
 	}
 }
 
