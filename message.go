@@ -99,6 +99,7 @@ var docker_left_names = [...]string{
 }
 
 var allocIdRegex = regexp.MustCompile(`-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
+var taskNumberRegex = regexp.MustCompile(`-\d+$`)
 
 func JSONToMessage(str string) Message {
 	//fmt.Printf("JSONToMessage: %+v\n", str)
@@ -215,6 +216,9 @@ func EnsureMessageService(m *Message) error {
 		if ok {
 			if allocIdRegex.MatchString(container_name) {
 				service = container_name[0:allocIdRegex.FindStringIndex(container_name)[0]]
+				if taskNumberRegex.MatchString(service) {
+					service = service[0:taskNumberRegex.FindStringIndex(service)[0]]
+				}
 				m.Container.Set(service, "service")
 				m.Topic = service
 			} else {

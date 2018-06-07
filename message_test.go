@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -178,6 +180,45 @@ func TestEnsureMessageServiceOfNomadContainer(t *testing.T) {
 	assert.Equal(t, value, "elon-musk")
 
 	assert.Equal(t, m.Topic, "elon-musk")
+}
+
+func TestEnsureMessageServiceOfNomadContainerWithTaskNumber(t *testing.T) {
+	tests := []struct {
+		description     string
+		container_name  string
+		expectedService string
+	}{
+		{
+			description:     "task name with single digit",
+			container_name:  "kimbal-musk-1-b8364ad8-b7ce-48bb-88d3-a465052e1cec",
+			expectedService: "kimbal-musk",
+		},
+		{
+			description:     "task name with double digits",
+			container_name:  "kimbal-musk-12-b8364ad8-b7ce-48bb-88d3-a465052e1cec",
+			expectedService: "kimbal-musk",
+		},
+		{
+			description:     "task name with a bigass number",
+			container_name:  "kimbal-musk-6666666-b8364ad8-b7ce-48bb-88d3-a465052e1cec",
+			expectedService: "kimbal-musk",
+		},
+	}
+
+	for _, test := range tests {
+		json := "{\"container_name\":\"%s\"}"
+		m := JSONToMessage(fmt.Sprintf(json, test.container_name))
+		err := m.ParseJSON()
+		assert.NoError(t, err)
+
+		err = EnsureMessageService(&m)
+		assert.NoError(t, err)
+
+		actualService, ok := m.Container.Path("service").Data().(string)
+		assert.True(t, ok)
+
+		assert.Equal(t, test.expectedService, actualService)
+	}
 }
 
 func TestEnsureMessageServiceAddsHostnameAndServerIP(t *testing.T) {
